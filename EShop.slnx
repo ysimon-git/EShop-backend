@@ -1,17 +1,4 @@
 <Solution>
-  <Folder Name="/Docs/">
-    <File Path="01-solution-structure.md" />
-    <File Path="02-catalog-domain.md" />
-    <File Path="03-dependency-inversion.md" />
-    <File Path="04-entity-framework-core.md" />
-    <File Path="05-catalog-api.md" />
-    <File Path="06-Domain Exceptions and Global Error Handling.txt" />
-    <File Path="07-product-business-operations.md" />
-    <File Path="08-product-category-brand.md" />
-    <File Path="09-order-cqrs-and-status.md" />
-    <File Path="10-order-catalog-rest.md" />
-    <File Path="11-Auth-entity-framework.md" />
-  </Folder>
   <Folder Name="/Services/" />
   <Folder Name="/Services/Auth/">
     <Project Path="Services/Auth/Auth.Api/Auth.Api.csproj" />
