@@ -1,0 +1,27 @@
+# Build
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Test
+TestResults/
+
+# Angular
+node_modules/
+dist/
+
+# Publish
+publish/
+
+# Configuration locale
+appsettings.Development.json
+
+*.jpg
+*.jpeg
+*.png
+*.md
+*.txt
