@@ -2,13 +2,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Order.Api.Dtos;
 using Order.Api.DTOs;
+using Order.Application.Catalog.Interfaces;
 using Order.Application.Events;
 using Order.Application.Interfaces;
 using Order.Application.Orders.Commands.AddOrderItem;
 using Order.Application.Orders.Commands.CreateOrder;
+using Order.Application.Orders.Commands.CreateOrderWithItems;
 using Order.Application.Orders.Queries.GetOrderById;
 using System.Security.Claims;
-using Order.Application.Catalog.Interfaces;
 
 
 namespace Order.Api.Controllers;
@@ -19,19 +20,21 @@ public sealed class OrdersController : ControllerBase
 {
     private readonly CreateOrderCommandHandler _createOrderHandler;
     private readonly AddOrderItemCommandHandler _addOrderItemHandler;
-    private readonly GetOrderByIdQueryHandler _getOrderByIdHandler;
+    private readonly CreateOrderWithItemsHandler _createOrderWithItemsHandler;
     private readonly IOrderRepository _orderRepository;
     private readonly ICatalogServiceClient _catalogServiceClient;
+ 
 
     public OrdersController(CreateOrderCommandHandler createOrderHandler,
                         AddOrderItemCommandHandler addOrderItemHandler,
-                        GetOrderByIdQueryHandler getOrderByIdHandler,
+                        CreateOrderWithItemsHandler createOrderWithItemsHandler,
                         IOrderRepository orderRepository,
                         ICatalogServiceClient catalogServiceClient)
     {                    
         _createOrderHandler = createOrderHandler;
         _addOrderItemHandler = addOrderItemHandler;
-        _getOrderByIdHandler = getOrderByIdHandler;
+        _createOrderWithItemsHandler= createOrderWithItemsHandler;
+
         _orderRepository = orderRepository;
         _catalogServiceClient = catalogServiceClient;
 
@@ -40,8 +43,13 @@ public sealed class OrdersController : ControllerBase
 
 
 
+
+
+
+
+
     [Authorize(Roles = "User,Admin")]
-    [HttpPost]
+    [HttpPost("createorder")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -71,6 +79,57 @@ public sealed class OrdersController : ControllerBase
                 OrderNumber = result.OrderNumber
             });
     }
+
+
+
+    //[Authorize(Roles = "User,Admin")]
+    [HttpPost("createorderwithitems")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CreateOrderWithItems(
+        CreateOrderWithItemsDto dto,
+        CancellationToken cancellationToken)
+    {
+        // 1. Get authenticated customer from JWT
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!Guid.TryParse(userId, out var customerId))
+            return Unauthorized();
+
+        // 2. Validate items
+        if (dto.items is null || dto.items.Length == 0)
+            return BadRequest("The order must contain at least one item.");
+
+        // 3. Map DTO to application command
+        var command = new CreateOrderWithItemsCommand(
+            customerId,
+            dto.note,
+            dto.items.Select(item =>
+                new CreateOrderWithItemsItem(
+                    item.ProductId,
+                    item.Quantity
+                )).ToList()
+        );
+
+        // 4. Execute the handler
+        var result = await _createOrderWithItemsHandler.HandleAsync(
+            command,
+            cancellationToken
+        );
+
+        // 5. Return the created order
+        return StatusCode(
+            StatusCodes.Status201Created,
+            new
+            {
+                Id = result.Id,
+                OrderNumber = result.OrderNumber
+            }
+        );
+    }
+
 
 
 

@@ -32,4 +32,21 @@ public sealed class CatalogClient : ICatalogClient
         return await response.Content.ReadFromJsonAsync<CatalogProduct>(
             cancellationToken: cancellationToken);
     }
+
+
+
+    //call catalog service to adjust stock
+    public async Task RemoveProductFromStock(CatalogProductStockChange product_quantity, CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"api/products/{product_quantity.Id}/stock/remove",
+            new { Quantity = product_quantity.StockQuantity },
+            cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+    }
+
+
+
+
 }
+  

@@ -37,7 +37,8 @@ public sealed class User
         Email = email;
         PasswordHash = passwordHash;
         Role = role;
-        EmailConfirmed = false;
+        //EmailConfirmed = false;
+        EmailConfirmed = true; //test
     }
 
 

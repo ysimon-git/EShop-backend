@@ -6,6 +6,7 @@ using Order.Application.Catalog.Interfaces;
 using Order.Application.Events;
 using Order.Application.Orders.Commands.AddOrderItem;
 using Order.Application.Orders.Commands.CreateOrder;
+using Order.Application.Orders.Commands.CreateOrderWithItems;
 using Order.Application.Orders.Queries.GetOrderById;
 using Order.Infrastructure;
 using Order.Infrastructure.Catalog;
@@ -41,7 +42,21 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<CreateOrderCommandHandler>();
 builder.Services.AddScoped<AddOrderItemCommandHandler>();
 builder.Services.AddScoped<GetOrderByIdQueryHandler>();
-builder.Services.AddScoped<ICatalogServiceClient,CatalogServiceClient>();
+builder.Services.AddScoped<CreateOrderWithItemsHandler>();
+
+
+
+//CORS for frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AngularFrontend", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 
 //JWT
@@ -109,7 +124,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
-
+app.UseCors("AngularFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 

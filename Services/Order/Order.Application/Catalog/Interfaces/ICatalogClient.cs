@@ -8,4 +8,7 @@ public interface ICatalogClient
     Task<CatalogProduct?> GetProductByIdAsync(
         Guid productId,
         CancellationToken cancellationToken = default);
+
+
+    Task RemoveProductFromStock(CatalogProductStockChange productQuantity, CancellationToken cancellationToken = default);
 }
