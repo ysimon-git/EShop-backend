@@ -18,4 +18,7 @@
     <Project Path="Services/Order/Order.Domain/Order.Domain.csproj" Id="cd229db9-dab0-40f7-9b99-d5b1f1518454" />
     <Project Path="Services/Order/Order.Infrastructure/Order.Infrastructure.csproj" Id="14b38b07-4dac-4ff1-87f3-8885590b72b7" />
   </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/Catalog.UnitTests/Catalog.UnitTests.csproj" Id="0fa78662-a94f-4c28-af5c-2b0995736a34" />
+  </Folder>
 </Solution>
