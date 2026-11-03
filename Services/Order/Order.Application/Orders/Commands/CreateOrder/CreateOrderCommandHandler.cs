@@ -5,7 +5,7 @@ using OrderEntity = Order.Domain.Entities.Order;
 namespace Order.Application.Orders.Commands.CreateOrder;
 
 
-public sealed class CreateOrderCommandHandler
+public sealed class CreateOrderCommandHandler:ICreateOrderCommandHandler
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IOrderStatusRepository _statusRepository;

@@ -3,7 +3,7 @@ using Order.Application.Interfaces;
 
 namespace Order.Application.Orders.Commands.AddOrderItem;
 
-public sealed class AddOrderItemCommandHandler
+public sealed class AddOrderItemCommandHandler: IAddOrderItemCommandHandler
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IOrderStatusRepository _statusRepository;

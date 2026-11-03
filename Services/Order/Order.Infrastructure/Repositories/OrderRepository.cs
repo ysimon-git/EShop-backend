@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Order.Application.Interfaces;
+using Order.Application.Orders.Queries.GetOrderByCustomerId;
 using Order.Infrastructure.Persistence;
 using OrderEntity = Order.Domain.Entities.Order;
 
@@ -31,6 +32,33 @@ public sealed class OrderRepository : IOrderRepository
             .Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
+
+
+
+    public async Task<List<OrderSummaryDto>> GetByCustomerIdAsync(
+    Guid customerId,
+    CancellationToken cancellationToken = default)
+    {
+
+        return await (
+            from order in _context.Orders
+            join status in _context.OrderStatus
+                on order.StatusId equals status.Id
+            where order.CustomerId == customerId
+            orderby order.CreatedAtUtc descending
+            select new OrderSummaryDto(
+                order.Id,
+                order.OrderNumber,
+                order.CustomerId,
+                order.CreatedAtUtc,
+                status.Status,
+                order.Items.Sum(item => item.Quantity * item.UnitPrice)
+            )
+        ).ToListAsync();
+    }
+
+
+
 
     public Task SaveChangesAsync(
     CancellationToken cancellationToken = default)
@@ -84,4 +112,6 @@ public sealed class OrderRepository : IOrderRepository
 
         return true;
     }
+
+   
 }

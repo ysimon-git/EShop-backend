@@ -7,6 +7,7 @@ using Order.Application.Events;
 using Order.Application.Orders.Commands.AddOrderItem;
 using Order.Application.Orders.Commands.CreateOrder;
 using Order.Application.Orders.Commands.CreateOrderWithItems;
+using Order.Application.Orders.Queries.GetOrderByCustomerId;
 using Order.Application.Orders.Queries.GetOrderById;
 using Order.Infrastructure;
 using Order.Infrastructure.Catalog;
@@ -39,10 +40,15 @@ builder.Services.AddSwaggerGen(options =>
 
 // Infrastructure : DbContext et IProductRepository
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddScoped<CreateOrderCommandHandler>();
-builder.Services.AddScoped<AddOrderItemCommandHandler>();
-builder.Services.AddScoped<GetOrderByIdQueryHandler>();
-builder.Services.AddScoped<CreateOrderWithItemsHandler>();
+
+builder.Services.AddScoped<ICreateOrderCommandHandler,CreateOrderCommandHandler>();
+builder.Services.AddScoped<IAddOrderItemCommandHandler,AddOrderItemCommandHandler>();
+builder.Services.AddScoped<ICreateOrderWithItemsHandler,CreateOrderWithItemsHandler>();
+
+builder.Services.AddScoped<IGetOrderByCustomerIdQueryHandler, GetOrderByCustomerIdQueryHandler>();
+builder.Services.AddScoped<IGetOrderByIdQueryHandler, GetOrderByIdQueryHandler>();
+
+
 
 
 

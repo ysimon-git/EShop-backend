@@ -8,6 +8,7 @@ using Order.Application.Interfaces;
 using Order.Application.Orders.Commands.AddOrderItem;
 using Order.Application.Orders.Commands.CreateOrder;
 using Order.Application.Orders.Commands.CreateOrderWithItems;
+using Order.Application.Orders.Queries.GetOrderByCustomerId;
 using Order.Application.Orders.Queries.GetOrderById;
 using System.Security.Claims;
 
@@ -18,32 +19,35 @@ namespace Order.Api.Controllers;
 [Route("api/orders")]
 public sealed class OrdersController : ControllerBase
 {
-    private readonly CreateOrderCommandHandler _createOrderHandler;
-    private readonly AddOrderItemCommandHandler _addOrderItemHandler;
-    private readonly CreateOrderWithItemsHandler _createOrderWithItemsHandler;
+    private readonly ICreateOrderCommandHandler _createOrderHandler;
+    private readonly IAddOrderItemCommandHandler _addOrderItemHandler;
+    private readonly ICreateOrderWithItemsHandler _createOrderWithItemsHandler;
+    private readonly IGetOrderByIdQueryHandler _getOrderByIdQueryHandler;
+    private readonly IGetOrderByCustomerIdQueryHandler _getOrderByCustomerIdQueryHandler;
     private readonly IOrderRepository _orderRepository;
     private readonly ICatalogServiceClient _catalogServiceClient;
- 
+  
 
-    public OrdersController(CreateOrderCommandHandler createOrderHandler,
-                        AddOrderItemCommandHandler addOrderItemHandler,
-                        CreateOrderWithItemsHandler createOrderWithItemsHandler,
+
+    public OrdersController(ICreateOrderCommandHandler createOrderHandler,
+                        IAddOrderItemCommandHandler addOrderItemHandler,
+                        ICreateOrderWithItemsHandler createOrderWithItemsHandler,
+                        IGetOrderByIdQueryHandler getOrderByIdQueryHandler,
+                        IGetOrderByCustomerIdQueryHandler getOrderByCustomerIdQueryHandler,
                         IOrderRepository orderRepository,
                         ICatalogServiceClient catalogServiceClient)
     {                    
         _createOrderHandler = createOrderHandler;
         _addOrderItemHandler = addOrderItemHandler;
         _createOrderWithItemsHandler= createOrderWithItemsHandler;
+        _getOrderByIdQueryHandler = getOrderByIdQueryHandler;
+        _getOrderByCustomerIdQueryHandler = getOrderByCustomerIdQueryHandler;
 
         _orderRepository = orderRepository;
         _catalogServiceClient = catalogServiceClient;
 
 
     }
-
-
-
-
 
 
 
@@ -82,7 +86,7 @@ public sealed class OrdersController : ControllerBase
 
 
 
-    //[Authorize(Roles = "User,Admin")]
+    [Authorize(Roles = "User,Admin")]
     [HttpPost("createorderwithitems")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -131,86 +135,15 @@ public sealed class OrdersController : ControllerBase
     }
 
 
-
-
     [Authorize(Roles = "User,Admin")]
-    [HttpGet("{id:guid}/details")]
-    public async Task<IActionResult> GetDetails(
-    Guid id,
-    CancellationToken cancellationToken)
-    {
-        //get all products details contained into one order 
-        var order = await _orderRepository.GetByIdAsync(
-            id,
-            cancellationToken);
-
-        if (order is null)
-            return NotFound();
-
-        // Admin can view any order.
-        if (!User.IsInRole("Admin"))
-        {
-            var userId = Guid.Parse(
-                User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-            if (order.CustomerId != userId)
-                return Forbid();
-        }
-
-        // Get all distinct ProductIds from the order.
-        var productIds = order.Items
-            .Select(item => item.ProductId)
-            .Distinct()
-            .ToList();
-
-        // Only ONE HTTP request to CatalogService.
-        var products = await _catalogServiceClient.GetProductsByIdsAsync(
-            productIds,
-            cancellationToken);
-
-        var items = order.Items
-            .Select(item =>
-            {
-                var product = products.First(p =>
-                    p.Id == item.ProductId);
-
-                return new OrderItemDetailsDto(
-                    item.ProductId,
-                    product.Name,
-                    product.ImageUrl,
-                    product.Category,
-                    product.Brand,
-                    item.Quantity,
-                    item.UnitPrice,
-                    item.TotalPrice);
-            })
-            .ToList();
-
-        var result = new OrderDetailsDto(
-            order.Id,
-            order.OrderNumber,
-            order.CustomerId,
-            order.StatusId,
-            order.CreatedAtUtc,
-            order.Note,
-            order.TotalAmount,
-            items);
-
-        return Ok(result);
-    }
-
-
-
-    [Authorize(Roles = "User,Admin")]
-    [HttpPost("{id:guid}/items")]
+    [HttpPost("{orderId:guid}/items")]
     public async Task<IActionResult> AddItem(
-    Guid id,
-    AddOrderItemDto dto,
-    AddOrderItemCommandHandler handler,
+    Guid orderId,
+    [FromBody] AddOrderItemDto dto,
     CancellationToken cancellationToken)
     {
         var command = new AddOrderItemCommand(
-            id,
+            orderId,
             dto.ProductId,
             dto.Quantity);
 
@@ -228,9 +161,9 @@ public sealed class OrdersController : ControllerBase
     Guid id,
     CancellationToken cancellationToken)
     {
-        var order = await _orderRepository.GetByIdAsync(
-            id,
-            cancellationToken);
+        var query=new GetOrderByIdQuery(id);
+        var order=await _getOrderByIdQueryHandler.HandleAsync(query, cancellationToken);
+              
 
         if (order is null)
             return NotFound();
@@ -250,6 +183,32 @@ public sealed class OrdersController : ControllerBase
     }
 
 
+    
+    [Authorize(Roles = "User,Admin")]
+    [HttpGet("GetByIdCustomer{id:guid}")]
+    public async Task<IActionResult> GetByIdCustomer(Guid id,CancellationToken cancellationToken)
+     {
+
+            var query = new GetOrderByCustomerIdQuery(id);
+            var orderList = await _getOrderByCustomerIdQueryHandler.HandleAsync(query, cancellationToken);
+
+            if (orderList is null)
+                return NotFound();
+
+            // Admin can access any order
+            if (User.IsInRole("Admin"))
+                return Ok(orderList);
+
+            var userId = Guid.Parse(
+                User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            // User can access only his own orders
+            if (orderList[0].CustomerId != userId)
+                return Forbid();
+
+
+            return Ok(orderList);
+    }
 
 
     [Authorize(Roles = "Admin")]
@@ -269,4 +228,10 @@ public sealed class OrdersController : ControllerBase
 
         return NoContent();
     }
+
+
+
+
+
+   
 }
