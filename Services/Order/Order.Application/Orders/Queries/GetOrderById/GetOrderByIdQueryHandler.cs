@@ -4,7 +4,7 @@ using Order.Application.Interfaces;
 namespace Order.Application.Orders.Queries.GetOrderById;
 
 
-
+//Get Order with all items in one handler
 
 public sealed class GetOrderByIdQueryHandler : IGetOrderByIdQueryHandler
 {

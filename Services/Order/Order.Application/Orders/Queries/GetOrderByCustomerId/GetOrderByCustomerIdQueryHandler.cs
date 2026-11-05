@@ -7,6 +7,7 @@ using System.Text;
 
 namespace Order.Application.Orders.Queries.GetOrderByCustomerId
 {
+    //Get all orders summary for one customer handler
     public sealed class GetOrderByCustomerIdQueryHandler:IGetOrderByCustomerIdQueryHandler
     {
         private readonly IOrderRepository _orderRepository;
