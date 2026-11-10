@@ -156,7 +156,7 @@ public sealed class OrdersController : ControllerBase
 
 
     [Authorize(Roles = "User,Admin")]
-    [HttpGet("{id:guid}")]
+    [HttpGet("GetById/{id:guid}")]
     public async Task<IActionResult> GetById(
     Guid id,
     CancellationToken cancellationToken)
@@ -182,33 +182,34 @@ public sealed class OrdersController : ControllerBase
         return Ok(order);
     }
 
-
     
+
     [Authorize(Roles = "User,Admin")]
-    [HttpGet("GetByIdCustomer{id:guid}")]
-    public async Task<IActionResult> GetByIdCustomer(Guid id,CancellationToken cancellationToken)
-     {
+    [HttpGet("GetByIdCustomer/{customerId:guid}")]
+    public async Task<IActionResult> GetByIdCustomer(
+    Guid customerId,
+    CancellationToken cancellationToken)
+    {
+        // Admin can access any customer's orders
+        if (!User.IsInRole("Admin"))
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var query = new GetOrderByCustomerIdQuery(id);
-            var orderList = await _getOrderByCustomerIdQueryHandler.HandleAsync(query, cancellationToken);
-
-            if (orderList is null)
-                return NotFound();
-
-            // Admin can access any order
-            if (User.IsInRole("Admin"))
-                return Ok(orderList);
-
-            var userId = Guid.Parse(
-                User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            if (!Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized();
 
             // User can access only his own orders
-            if (orderList[0].CustomerId != userId)
+            if (customerId != userId)
                 return Forbid();
+        }
 
 
-            return Ok(orderList);
+        var query = new GetOrderByCustomerIdQuery(customerId);
+        var orderList = await _getOrderByCustomerIdQueryHandler.HandleAsync(query, cancellationToken);
+
+        return Ok(orderList);
     }
+    
 
 
     [Authorize(Roles = "Admin")]
